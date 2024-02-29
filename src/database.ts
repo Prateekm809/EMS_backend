@@ -1,24 +1,23 @@
 import * as mongodb from 'mongodb';
-import { Employee} from './employee';
+import { Employee } from './employee';
 
-export const collections:{
+
+export const collections: {
     employees?: mongodb.Collection<Employee>;
+} = {}
 
-}={}
-
-export async function connectToDatabase(uri:string) {
+export async function connectToDatabase (uri: string){
     const client = new mongodb.MongoClient(uri);
     await client.connect();
 
-    
-    const db = client.db("Prateek");
+    const db = client.db("meanStackProject");
     await applySchemaValidation(db);
 
-    const employeesConnection = db.collection<Employee>('employees');
-    collections.employees = employeesConnection;
+    const employeesCollection = db.collection<Employee>('employees');
+    collections.employees = employeesCollection;
 }
 
-async function applySchemaValidation(db: mongodb.Db) {
+async function applySchemaValidation(db: mongodb.Db){
     const jsonSchema = {
         $jsonSchema: {
             bsonType: "object",
@@ -28,30 +27,28 @@ async function applySchemaValidation(db: mongodb.Db) {
                 _id: {},
                 name: {
                     bsonType: "string",
-                    description:"'name' is required and is a string"
+                    description: "'name' is required and is a string",
                 },
-                email : {
+                position: {
                     bsonType: "string",
-                    description:"'email' is required and is a string",
+                    description: "'position' is required and is a string",
                     minLength: 5
                 },
-                enum : {
+                level: {
                     bsonType: "string",
-                    description:"'genre' is required and is a one of 'woman', 'men' or 'other'",
-                    enum: ["woman","men","other"]
-                }
-            }
-        }
+                    description: "'level' is required and is one of 'junior', 'mid', or 'senior'",
+                    enum: ["junior", "mid", "senior"],
+                },
+            },
+        },
     };
 
     await db.command({
-        collMod: 'users',
+        collMod: 'employees',
         validator: jsonSchema
-    })
-    .catch(async (error: mongodb.MongoServerError)=>{
-        if(error.codeName === 'NamespaceNotFound'){
-            await db.createCollection('users', {validator:jsonSchema})
+    }).catch(async (error: mongodb.MongoServerError) => {
+        if(error.codeName === 'NamesapaceNotFound'){
+            await db.createCollection('employees', {validator: jsonSchema})
         }
     })
 }
-
